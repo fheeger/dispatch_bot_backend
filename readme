@@ -1,0 +1,31 @@
+## to do once
+
+    cd bot_discord/
+    ## create database
+    python manage.py migrate
+    ## create an user for django admin
+    python manage.py createsuperuser
+
+    ## add a .env file where manage.py is
+USERNAME=<your_username>
+PASSWORD=<your_password>
+BOT_TOKEN=<bot_token>
+
+
+##to run the django server
+
+    cd bot_discord/
+    python manage.py runserver
+
+django admin can be accessed here: http://localhost:8000/admin/
+
+## to run the discord bot
+
+    python discord_script.py
+
+django needs the following libraries:
+djangorestframework
+requests
+discord
+python-dateutil
+
