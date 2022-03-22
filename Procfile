@@ -1,0 +1,1 @@
+web: gunicorn dispatch_bot.wsgi --log-file -
