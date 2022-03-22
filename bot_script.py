@@ -19,6 +19,7 @@ NEW_GAME_PATH = "new_game/"
 GET_ROUND_PATH = "get_round"
 NEXT_TURN_PATH = "next_turn/"
 GET_MESSAGES_PATH = "get_messages"
+CHECK_MESSAGES_PATH = "check_messages"
 POST_MESSAGE_PATH = "send_message/"
 
 description = '''Dispatch bot for IKS'''
@@ -111,8 +112,15 @@ async def get_round(ctx):
 async def next_turn(ctx):
     """Tell the server to avance the turn by one"""
     try:
+        messages = get_url(CHECK_MESSAGES_PATH)
+        if len(messages)>0:
+            await ctx.send("Received %i messages from the server for this turn that are not approved" % len(messages))
+            return
+    except Exception as e:
+        await ctx.send("There was an error checking the messages:%s" % str(e)[:1000])
+        raise
+    try:
         res = patch_url(NEXT_TURN_PATH)
-        print(res)
         await ctx.send("Next turn started. This is turn {}, time is {}".format(res["turn"], res["current_time"]))
     except Exception as e:
         await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])

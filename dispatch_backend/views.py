@@ -69,3 +69,14 @@ class new_message(viewsets.ModelViewSet):
         message = serializer.save()
         print(serializer.data)
         return Response(serializer.data, status=201)
+
+class check_messages(viewsets.ModelViewSet):
+    """ get list of messages"""
+    permission_classes = (AllowAny,)
+    serializer_class = MessageSerializer
+
+    def get_queryset(self):
+        """ list of messages for the next turn that was not approved yet"""
+        game = Game.objects.latest('id')
+        messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
+        return messages
