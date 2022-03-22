@@ -2,6 +2,7 @@ from discord import ChannelType
 from discord.ext import commands
 import requests
 import json
+import os
 
 ## read token
 TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
@@ -9,7 +10,7 @@ TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 RED_CATEGORY = "RED"
 BLUE_CATEGORY = "BLUE"
 
-BASE_URL = 'http://localhost:8000/bot/'
+BASE_URL = 'https://django-dispatch-bot.herokuapp.com/bot/'
 NEW_GAME_PATH = "new_game/"
 GET_ROUND_PATH = "get_round"
 NEXT_TURN_PATH = "next_turn/"
