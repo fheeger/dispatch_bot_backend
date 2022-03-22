@@ -4,12 +4,7 @@ import requests
 import json
 
 ## read token
-TOKEN = None
-for line in open(".env"):
-    if line.startswith("BOT_TOKEN"):
-        TOKEN = line.strip().split("=")[1]
-if TOKEN is None:
-    raise RuntimeError("Could not read bot token from .env file.")
+TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
 RED_CATEGORY = "RED"
 BLUE_CATEGORY = "BLUE"
