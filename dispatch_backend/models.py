@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import datetime, time, timedelta, date
-
+from django.core.exceptions import ValidationError
+import dispatch_backend.validators as validators
 
 START_TIME=time(8, 00, 00)
 
@@ -36,6 +37,11 @@ class Message(models.Model):
 
     def __str__(self):
         return self.sender
+
+    def clean(self):
+        """ check if the message can be approved """
+        validators.validate_message(self, ValidationError)
+
 
 
 

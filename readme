@@ -1,6 +1,6 @@
 ## to do once
 
-    cd bot_discord/
+    cd dispatch_bot/
     ## create database
     python manage.py migrate
     ## create an user for django admin
@@ -14,7 +14,7 @@ BOT_TOKEN=<bot_token>
 
 ##to run the django server
 
-    cd bot_discord/
+    cd dispatch_bot/
     python manage.py runserver
 
 django admin can be accessed here: http://localhost:8000/admin/
@@ -28,4 +28,34 @@ djangorestframework
 requests
 discord
 python-dateutil
+
+## bqsic commands
+
+to start a new game:
+
+        !start_game name_game
+
+-> it will create a new game and the channels
+
+to get the round number:
+
+        !get_round
+
+-> will print the current round
+
+to add a message
+
+        !dispatch
+        TO: recipient name
+        FROM: sender name
+
+        your message here
+        on several line
+        be polite
+
+to go to next turn and send messages (first you should approve the messages through the django admin interface)
+
+        !next_turn
+
+-> it will increment the turn and get all messages for the turn and sent them in the corresponding channels
 

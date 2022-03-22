@@ -12,7 +12,7 @@ class get_round(viewsets.ModelViewSet):
     def get_object(self):
         """ return the list of user types as dict """
         game = Game.objects.latest('id')
-        return {'turn': game.turn}
+        return game
 
     def partial_update(self, request, pk=None):
         game = Game.objects.latest('id')
