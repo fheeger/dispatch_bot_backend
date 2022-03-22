@@ -92,7 +92,7 @@ async def dispatch(ctx, message: str):
     """recieve a disptach from a player"""
     try:
         data = {
-            "text": ctx.message.content.split(" ", 1)[1],
+            "text": ctx.message.content.split("!dispatch", 1)[1],
             "sender": ctx.message.author.name
         }
         post_url(POST_MESSAGE_PATH, data)
