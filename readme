@@ -14,13 +14,14 @@ BOT_TOKEN=<bot_token>
 
 ##to run the django server
 
-    cd dispatch_bot/
+    cd dispatch_bot_backend/
     python manage.py runserver
 
 django admin can be accessed here: http://localhost:8000/admin/
 
 ## to run the discord bot
 
+    cd dispatch_bot
     python discord_script.py
 
 django needs the following libraries:

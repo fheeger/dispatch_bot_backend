@@ -11,10 +11,14 @@ class get_round(viewsets.ModelViewSet):
 
     def get_object(self):
         """ return the list of user types as dict """
+        if len(Game.objects.all())==0:
+            return None
         game = Game.objects.latest('id')
         return game
 
     def partial_update(self, request, pk=None):
+        if len(Game.objects.all())==0:
+            return Response({'error': 'There is no game'},status=status.HTTP_200_OK)
         game = Game.objects.latest('id')
         game.turn += 1
         game.save()
@@ -48,6 +52,8 @@ class get_messages(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ list of messages """
+        if len(Game.objects.all())==0:
+            return []
         game = Game.objects.latest('id')
         messages = Message.objects.filter(game=game, approved=True, turn_when_received=game.turn, is_lost=False)
         return messages
@@ -57,17 +63,16 @@ class new_message(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
 
     def create_message(self, request, *args, **kwargs):
-        print(request.data)
+        if len(Game.objects.all())==0:
+            return Response({'error': 'There is no game'},status=status.HTTP_200_OK)
         data = request.data.copy()
         game = Game.objects.latest('id')
         data["turn_when_sent"] = game.turn
         data["turn_when_received"] = game.turn+1
         data["game"] = game.id
-        print(data)
         serializer = MessageSerializer(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         message = serializer.save()
-        print(serializer.data)
         return Response(serializer.data, status=201)
 
 class check_messages(viewsets.ModelViewSet):
@@ -77,6 +82,8 @@ class check_messages(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ list of messages for the next turn that was not approved yet"""
+        if len(Game.objects.all())==0:
+            return []
         game = Game.objects.latest('id')
         messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
         return messages

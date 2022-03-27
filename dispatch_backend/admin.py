@@ -8,15 +8,18 @@ class MessageAdmin(admin.ModelAdmin):
 
     def truncated_text(self, obj):
         """ show only the beginning of the text"""
-        return obj.text[:25]
+        return obj.text[:60]
 
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """ only show channels of last game
         warning : with show it for all messages even from previous game"""
         if db_field.name == "channel":
-            game = Game.objects.latest('id')
-            kwargs["queryset"] = Channel.objects.filter(game=game)
+            try:
+                game = Game.objects.latest('id')
+                kwargs["queryset"] = Channel.objects.filter(game=game)
+            except:
+                kwargs["queryset"] = Channel.objects.all()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
