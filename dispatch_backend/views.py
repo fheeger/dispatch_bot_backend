@@ -25,7 +25,8 @@ class get_round(viewsets.ModelViewSet):
         data =  {'name':game.name,
                 'turn': game.turn,
                 'current_time' : game.calculate_time()}
-
+        for message in Message.objects.filter(approved=False, turn_when_received=game.turn-1):
+            message.set_turn(game.turn)
         return Response(data,status=status.HTTP_200_OK)
 
 

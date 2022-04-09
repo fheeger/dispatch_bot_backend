@@ -42,6 +42,15 @@ class Message(models.Model):
         """ check if the message can be approved """
         validators.validate_message(self, ValidationError)
 
+    def set_turn(self, turn):
+        """ change the value for turn_when_received"""
+        self.turn_when_received=turn
+        self.save()
+
+
+class SentMessage(Message):
+    class Meta:
+        proxy = True
 
 
 

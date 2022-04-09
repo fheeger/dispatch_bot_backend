@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Message, Game, Channel
+from .models import Message, Game, Channel, SentMessage
+
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channel', 'turn_when_received', 'is_lost', 'approved']
@@ -10,6 +11,15 @@ class MessageAdmin(admin.ModelAdmin):
         """ show only the beginning of the text"""
         return obj.text[:60]
 
+    def has_change_permission(self, request, obj=None):
+        """ message sent and approved cannot be changed anymore"""
+        if obj:
+            return not obj.approved or obj.turn_when_received>=obj.game.turn
+        return True
+
+    def get_queryset(self, request):
+        game = Game.objects.latest('id')
+        return self.model.objects.exclude(approved = True, turn_when_received__lt=game.turn)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """ only show channels of last game
@@ -23,6 +33,12 @@ class MessageAdmin(admin.ModelAdmin):
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
+class SentMessageAdmin(MessageAdmin):
+    list_editable=[]
+    def get_queryset(self, request):
+        game = Game.objects.latest('id')
+        return self.model.objects.filter(approved = True, turn_when_received__lt=game.turn)
+
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'turn']
     list_filter = ['name']
@@ -33,5 +49,6 @@ class ChannelAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Message, MessageAdmin)
+admin.site.register(SentMessage, SentMessageAdmin)
 admin.site.register(Game, GameAdmin)
 admin.site.register(Channel, ChannelAdmin)
