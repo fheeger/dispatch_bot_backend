@@ -40,8 +40,8 @@ class SentMessageAdmin(MessageAdmin):
         return self.model.objects.filter(approved = True, turn_when_received__lt=game.turn)
 
 class GameAdmin(admin.ModelAdmin):
-    list_display = ['name', 'turn']
-    list_filter = ['name']
+    list_display = ['name', 'turn', 'has_ended']
+    list_filter = ['name', 'has_ended']
 
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['name', 'game']

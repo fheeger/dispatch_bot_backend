@@ -10,6 +10,7 @@ class Game(models.Model):
     turn = models.IntegerField(default=1)
     start_time = models.TimeField(default=START_TIME)
     period_between_turns = models.IntegerField(default=15) #in minutes
+    has_ended = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
