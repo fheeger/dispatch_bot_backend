@@ -14,7 +14,7 @@ class MessageAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         """ message sent and approved cannot be changed anymore"""
         if obj:
-            return not obj.approved or obj.turn_when_received>=obj.game.turn
+            return not obj.approved or obj.turn_when_received>obj.game.turn
         return True
 
     def get_queryset(self, request):
