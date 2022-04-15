@@ -1,5 +1,5 @@
 from rest_framework import serializers, exceptions
-from .models import Game, Channel, Message
+from .models import Game, Channel, Message, Category
 
 
 class GameSerializer(serializers.ModelSerializer):
@@ -22,3 +22,9 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ("sender", "channelName", "text", "turn_when_sent", "turn_when_received", "game")
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ("number", "game")

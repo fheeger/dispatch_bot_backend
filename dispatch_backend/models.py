@@ -15,6 +15,7 @@ class Game(models.Model):
     period_between_turns = models.IntegerField(default=15) #in minutes
     has_ended = models.BooleanField(default=False)
     server_id = models.IntegerField(blank=True, null=True)
+    user_id = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -25,6 +26,10 @@ class Game(models.Model):
     def clean(self):
         """ check that the name is not already taken by a current game """
         validators.validate_game(self, ValidationError)
+
+    def get_categories(self):
+        """ return list of categories"""
+        return Category.objects.filter(game=self).values_list('number')
 
 class Channel(models.Model):
     name = models.CharField(max_length=100)
