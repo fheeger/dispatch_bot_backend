@@ -19,7 +19,7 @@ class MessageAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         game = Game.objects.latest('id')
-        return self.model.objects.exclude(approved = True, turn_when_received__lt=game.turn)
+        return self.model.objects.exclude(approved = True, turn_when_received__lte=game.turn)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """ only show channels of last game
@@ -37,7 +37,7 @@ class SentMessageAdmin(MessageAdmin):
     list_editable=[]
     def get_queryset(self, request):
         game = Game.objects.latest('id')
-        return self.model.objects.filter(approved = True, turn_when_received__lt=game.turn)
+        return self.model.objects.filter(approved = True, turn_when_received__lte=game.turn)
 
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'turn', 'has_ended']
