@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
-from .models import Message, Game
+from .models import Message, Game, Category
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
 from rest_framework.response import Response
 
@@ -59,7 +59,9 @@ class new_game(viewsets.ModelViewSet):
         """ create a new game and new channels """
         if len(Game.objects.filter(has_ended=False, name=request.data['name_game'])) >= 1:
             return Response({'error': 'A game with the same name is already going on! Please choose another name'},status=status.HTTP_200_OK)
-        serializer = GameSerializer(data={'name':request.data['name_game']}, context={'request': request})
+        serializer = GameSerializer(data={'name':request.data['name_game'],
+                                          'server_id': request.data['server_id'],
+                                          'user_id' : request.data['user_id']}, context={'request': request})
         serializer.is_valid(raise_exception=True)
         game = serializer.save()
         for channel in request.data['name_channels']:
@@ -142,7 +144,7 @@ class category(viewsets.ModelViewSet):
     def get_queryset(self):
         """ list of messages """
         game_name = self.kwargs['game_name']
-        game = get_game(request, game_name)
+        game = get_game(self.request, game_name)
         if not game:
             return []
         categories = Category.objects.filter(game=game)

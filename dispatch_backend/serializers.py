@@ -6,7 +6,7 @@ class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Game
-        fields = ("turn","name", "start_time")
+        fields = ("turn","name", "start_time", "server_id", "user_id")
 
 
 class ChannelSerializer(serializers.ModelSerializer):
