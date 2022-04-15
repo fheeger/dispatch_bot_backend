@@ -37,8 +37,8 @@ class new_game(viewsets.ModelViewSet):
 
     def create_game(self, request, *args, **kwargs):
         """ create a new game and new channels """
-        if len(Game.objects.filter(has_ended=False))>=1:
-            return Response({'error': 'There is already a game going on!'},status=status.HTTP_200_OK)
+        if len(Game.objects.filter(has_ended=False, name=request.data['name_game'])) >= 1:
+            return Response({'error': 'A game with the same name is already going on! Please choose another name'},status=status.HTTP_200_OK)
         serializer = GameSerializer(data={'name':request.data['name_game']}, context={'request': request})
         serializer.is_valid(raise_exception=True)
         game = serializer.save()

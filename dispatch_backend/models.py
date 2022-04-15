@@ -18,6 +18,10 @@ class Game(models.Model):
     def calculate_time(self):
         return (datetime.combine(date(1,1,1),self.start_time) + timedelta(minutes=(self.turn-1)*self.period_between_turns)).time()
 
+    def clean(self):
+        """ check that the name is not already taken by a current game """
+        validators.validate_game(self, ValidationError)
+
 class Channel(models.Model):
     name = models.CharField(max_length=100)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
