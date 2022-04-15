@@ -11,6 +11,7 @@ class Game(models.Model):
     start_time = models.TimeField(default=START_TIME)
     period_between_turns = models.IntegerField(default=15) #in minutes
     has_ended = models.BooleanField(default=False)
+    server_id = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -57,7 +58,15 @@ class SentMessage(Message):
     class Meta:
         proxy = True
 
+class Category(models.Model):
 
+    number = models.IntegerField()
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name_plural = "categories"
+
+    def __str__(self):
+        return self.number
 
 

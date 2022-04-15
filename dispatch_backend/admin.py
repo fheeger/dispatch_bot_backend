@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Message, Game, Channel, SentMessage
+from .models import Message, Game, Channel, SentMessage, Category
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -39,9 +39,14 @@ class SentMessageAdmin(MessageAdmin):
         game = Game.objects.latest('id')
         return self.model.objects.filter(approved = True, turn_when_received__lte=game.turn)
 
+class CategoryInline(admin.StackedInline):
+    model = Category
+    extra = 0
+
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'turn', 'has_ended']
     list_filter = ['name', 'has_ended']
+    inlines = [CategoryInline]
 
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['name', 'game']
