@@ -2,11 +2,14 @@ from django.db import models
 from datetime import datetime, time, timedelta, date
 from django.core.exceptions import ValidationError
 import dispatch_backend.validators as validators
+from django.core.validators import RegexValidator
+
+alphanumeric = RegexValidator(r'^[0-9a-zA-Z-_]*$', 'Only alphanumeric characters or underscore or dash are allowed.')
 
 START_TIME=time(8, 00, 00)
 
 class Game(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, validators=[alphanumeric])
     turn = models.IntegerField(default=1)
     start_time = models.TimeField(default=START_TIME)
     period_between_turns = models.IntegerField(default=15) #in minutes
