@@ -29,7 +29,7 @@ class Game(models.Model):
 
     def get_categories(self):
         """ return list of categories"""
-        return Category.objects.filter(game=self).values_list('number')
+        return Category.objects.filter(game=self).values_list('number', flat=True)
 
 class Channel(models.Model):
     name = models.CharField(max_length=100)
@@ -75,6 +75,6 @@ class Category(models.Model):
         verbose_name_plural = "categories"
 
     def __str__(self):
-        return self.number
+        return str(self.number)
 
 

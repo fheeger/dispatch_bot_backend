@@ -42,15 +42,17 @@ class SentMessageAdmin(MessageAdmin):
 class CategoryInline(admin.StackedInline):
     model = Category
     extra = 0
+    readonly_fields = ['number']
 
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'turn', 'has_ended']
     list_filter = ['name', 'has_ended']
     inlines = [CategoryInline]
+    readonly_fields = ['server_id', 'user_id']
 
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['name', 'game']
-    list_filter = ['name']
+    list_filter = ['name', 'game']
 
 
 admin.site.register(Message, MessageAdmin)

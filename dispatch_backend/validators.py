@@ -9,6 +9,6 @@ def validate_message(message, errorModel):
         raise errorModel("You cannot send a message to the past or for this turn, you can only send for next turn or after!")
 
 def validate_game(game, errorModel):
-    games = type(game).objects.filter(name=game.name, has_ended=False)
+    games = type(game).objects.filter(name=game.name, has_ended=False).exclude(id=game.id)
     if len(games)>0:
         raise errorModel("This name already exists, please choose another one!")

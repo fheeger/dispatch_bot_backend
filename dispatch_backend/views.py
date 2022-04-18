@@ -19,12 +19,11 @@ def get_game(request, game_name=None):
         games = Game.objects.filter(has_ended=False)
     if game_name:
         games = games.filter(name=game_name)
-    if not category_id:
+    if not category_id and len(games)>0:
         return games.latest('id')
     for game in games:
         if category_id in game.get_categories():
             return game
-
     return None
 
 class get_round(viewsets.ModelViewSet):
@@ -95,15 +94,9 @@ class new_message(viewsets.ModelViewSet):
         data["turn_when_sent"] = game.turn
         data["turn_when_received"] = game.turn+1
         data["game"] = game.id
-        list_categories = data.pop('category')
         serializer = MessageSerializer(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        for category in list_categories:
-            category_serializer = CategorySerializer(data={'number': category,
-                                                           'game':game}, context={'request': request})
-            category_serializer.is_valid(raise_exception=True)
-            serializer.save()
         return Response(serializer.data, status=201)
 
 class check_messages(viewsets.ModelViewSet):
@@ -150,18 +143,20 @@ class category(viewsets.ModelViewSet):
         categories = Category.objects.filter(game=game)
         return categories
 
-    def add_category(self, request, pk=None):
-        game_name = self.kwargs['game_name']
-        category = self.kwargs['category']
+    def add_category(self, request, game_name):
+        categories = request.data['category']
         game = get_game(self.request, game_name)
         if not game:
-            return Response({'error': 'There is no game to end'},status=status.HTTP_200_OK)
-        category_serializer = CategorySerializer(data={'number': category,
-                                                       'game': game}, context={'request': request})
-        category_serializer.is_valid(raise_exception=True)
-        serializer.save()
+            return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
+        existing_categories = game.get_categories()
+        for category in categories:
+            if category not in existing_categories:
+                category_serializer = CategorySerializer(data={'number': category,
+                                                               'game': game.id}, context={'request': request})
+                print(category_serializer.is_valid(raise_exception=True))
+                category_serializer.save()
         data =  {'game':game.name,
-                'category': category}
+                'categories': categories}
         return Response(data,status=status.HTTP_200_OK)
 
     def remove_category(self, request, pk=None):
