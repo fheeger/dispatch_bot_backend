@@ -45,7 +45,7 @@ class get_round(viewsets.ModelViewSet):
                 'turn': game.turn,
                 'current_time' : game.calculate_time()}
         for message in Message.objects.filter(approved=False, turn_when_received=game.turn-1):
-            message.set_turn(game.turn)
+            message.set_turn(game.turn+1)
         return Response(data,status=status.HTTP_200_OK)
 
 
@@ -159,15 +159,15 @@ class category(viewsets.ModelViewSet):
                 'categories': categories}
         return Response(data,status=status.HTTP_200_OK)
 
-    def remove_category(self, request, pk=None):
-        game_name = self.kwargs['game_name']
-        category = request.POST.get('category_id', None)
+    def remove_category(self, request, game_name):
+        categories = request.data['category']
         game = get_game(self.request, game_name)
         if not game:
-            return Response({'error': 'There is no game to end'},status=status.HTTP_200_OK)
-        categories = Category.objects.filter(game=game, number=int(category))
+            return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
+        existing_categories = game.get_categories()
         for category in categories:
-            category.delete()
+            if category in existing_categories:
+                Category.objects.get(game=game, number=category).delete()
         data =  {'game':game.name,
-                'category': category}
+                'category': categories}
         return Response(data,status=status.HTTP_200_OK)

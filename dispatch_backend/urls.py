@@ -17,6 +17,6 @@ urlpatterns = [
     path('send_message/', views.new_message.as_view({'post': 'create_message'})),
     path('check_messages/', views.check_messages.as_view({'get': 'list'})),
     path('add_category/<str:game_name>/', views.category.as_view({'patch': 'add_category'})),
-    path('remove_category/<str:game_name>/<int:category>/', views.category.as_view({'patch': 'remove_category'})),
+    path('remove_category/<str:game_name>/', views.category.as_view({'patch': 'remove_category'})),
     path('get_categories/<str:game_name>/', views.category.as_view({'get': 'list'}))
 ]
