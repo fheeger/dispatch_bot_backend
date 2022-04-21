@@ -22,7 +22,7 @@ def get_game(request, game_name=None):
     if not category_id and len(games)>0:
         return games.latest('id')
     for game in games:
-        if category_id in game.get_categories():
+        if int(category_id) in list(game.get_categories()):
             return game
     return None
 

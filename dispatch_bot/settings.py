@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
-ALLOWED_HOSTS = ["django-dispatch-bot.herokuapp.com"]
+ALLOWED_HOSTS = ["django-dispatch-bot.herokuapp.com", "localhost"]
 
 
 # Application definition
