@@ -14,8 +14,8 @@ class Game(models.Model):
     start_time = models.TimeField(default=START_TIME)
     period_between_turns = models.IntegerField(default=15) #in minutes
     has_ended = models.BooleanField(default=False)
-    server_id = models.IntegerField(blank=True, null=True)
-    user_id = models.IntegerField(blank=True, null=True)
+    server_id = models.BigIntegerField(blank=True, null=True)
+    user_id = models.BigIntegerField(blank=True, null=True)
 
     def __str__(self):
         return self.name
