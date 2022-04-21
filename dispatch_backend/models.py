@@ -68,7 +68,7 @@ class SentMessage(Message):
 
 class Category(models.Model):
 
-    number = models.IntegerField()
+    number = models.BigIntegerField()
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
 
     class Meta:
