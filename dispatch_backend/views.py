@@ -4,6 +4,9 @@ from .models import Message, Game, Category
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
 from rest_framework.response import Response
 
+from .exception import GameRetrievalException
+
+
 def get_game(request, game_name=None):
     server_id = None
     category_id = None
@@ -19,12 +22,15 @@ def get_game(request, game_name=None):
         games = Game.objects.filter(has_ended=False)
     if game_name:
         games = games.filter(name=game_name)
-    if not category_id and len(games)>0:
+    if len(games) == 0:
+        raise GameRetrievalException("No game found", status.HTTP_404_NOT_FOUND)
+    elif len(games) == 1:
         return games.latest('id')
-    for game in games:
-        if int(category_id) in list(game.get_categories()):
-            return game
-    return None
+    else:
+        for game in games:
+            if int(category_id) in list(game.get_categories()):
+                return game
+        raise GameRetrievalException("Can not decide which game you want", status.HTTP_400_BAD_REQUEST)
 
 class get_round(viewsets.ModelViewSet):
     """ show list of encryption types"""
@@ -36,7 +42,10 @@ class get_round(viewsets.ModelViewSet):
         return get_game(self.request)
 
     def partial_update(self, request, pk=None):
-        game=get_game(self.request)
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         if not game:
             return Response({'error': 'There is no game'},status=status.HTTP_200_OK)
         game.turn += 1
@@ -87,9 +96,10 @@ class new_message(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
 
     def create_message(self, request, *args, **kwargs):
-        game = get_game(self.request)
-        if not game:
-            return Response({'error': 'There is no game'},status=status.HTTP_200_OK)
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         data = request.data.copy()
         data["turn_when_sent"] = game.turn
         data["turn_when_received"] = game.turn+1
@@ -106,9 +116,10 @@ class check_messages(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ list of messages for the next turn that was not approved yet"""
-        game = get_game(self.request)
-        if not game:
-            return []
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
         return messages
 
@@ -118,7 +129,10 @@ class end_game(viewsets.ModelViewSet):
     serializer_class = GameSerializer
 
     def partial_update(self, request, pk=None):
-        game = get_game(self.request)
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         if not game:
             return Response({'error': 'There is no game to end'},status=status.HTTP_200_OK)
         game.has_ended = True
@@ -137,17 +151,19 @@ class category(viewsets.ModelViewSet):
     def get_queryset(self):
         """ list of messages """
         game_name = self.kwargs['game_name']
-        game = get_game(self.request, game_name)
-        if not game:
-            return []
+        try:
+            game = get_game(self.request, game_name)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         categories = Category.objects.filter(game=game)
         return categories
 
     def add_category(self, request, game_name):
         categories = request.data['category']
-        game = get_game(self.request, game_name)
-        if not game:
-            return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
+        try:
+            game = get_game(self.request, game_name)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         existing_categories = game.get_categories()
         for category in categories:
             if category not in existing_categories:
@@ -161,7 +177,10 @@ class category(viewsets.ModelViewSet):
 
     def remove_category(self, request, game_name):
         categories = request.data['category']
-        game = get_game(self.request, game_name)
+        try:
+            game = get_game(self.request, game_name)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
         if not game:
             return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
         existing_categories = game.get_categories()
