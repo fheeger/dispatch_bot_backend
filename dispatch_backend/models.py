@@ -31,9 +31,14 @@ class Game(models.Model):
         """ return list of categories"""
         return Category.objects.filter(game=self).values_list('number', flat=True)
 
+    def get_channels(self):
+        """ return list of channels"""
+        return Channel.objects.filter(game=self).values_list('channel_id', flat=True)
+
 class Channel(models.Model):
     name = models.CharField(max_length=100)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    channel_id = models.BigIntegerField()
 
     def __str__(self):
         return self.name

@@ -51,7 +51,7 @@ class GameAdmin(admin.ModelAdmin):
     readonly_fields = ['server_id', 'user_id']
 
 class ChannelAdmin(admin.ModelAdmin):
-    list_display = ['name', 'game']
+    list_display = ['name', 'game', 'channel_id']
     list_filter = ['name', 'game']
 
 

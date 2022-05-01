@@ -13,7 +13,7 @@ class ChannelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Channel
-        fields = ("name", "game")
+        fields = ("name", "game", "channel_id")
 
 
 class MessageSerializer(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
-from .models import Message, Game, Category
+from .models import Message, Game, Category, Channel
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
 from rest_framework.response import Response
 
@@ -73,7 +73,7 @@ class new_game(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         game = serializer.save()
         for channel in request.data['name_channels']:
-            channel_serializer=ChannelSerializer(data={'name':channel, 'game':game.id}, context={'request': request})
+            channel_serializer=ChannelSerializer(data={'name':channel['name'], 'channel_id': channel['id'], 'game':game.id}, context={'request': request})
             channel_serializer.is_valid(raise_exception=True)
             channel_serializer.save()
         return Response(serializer.data, status=201)
@@ -189,4 +189,57 @@ class category(viewsets.ModelViewSet):
                 Category.objects.get(game=game, number=category).delete()
         data =  {'game':game.name,
                 'category': categories}
+        return Response(data,status=status.HTTP_200_OK)
+
+class channel(viewsets.ModelViewSet):
+    """ get list of messages"""
+    permission_classes = (AllowAny,)
+    serializer_class = ChannelSerializer
+
+    def get_queryset(self):
+        """ list of channels """
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
+        channels = Channel.objects.filter(game=game)
+        return channels
+
+    def update_channels(self, request):
+        channels = request.data['channels']
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
+        existing_channels = game.get_channels()
+        for channel in channels:
+            for key, value in channel.items():
+                if key not in existing_channels:
+                    channel_serializer = ChannelSerializer(data={'channel_id': key,
+                                                                 'name': value,
+                                                                   'game': game.id}, context={'request': request})
+                    print(channel_serializer.is_valid(raise_exception=True))
+                    channel_serializer.save()
+                else:
+                    channel_to_update = Channel.objects.get(channel_id=key)
+                    channel_to_update.name=value
+                    channel_to_update.save()
+            data = {'game': game.name,
+                    'channels': channels}
+            return Response(data,status=status.HTTP_200_OK)
+
+    def remove_channels(self, request):
+        channels = request.data['channels']
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return Response(e.message, status=e.status)
+        if not game:
+            return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
+        existing_channels = game.get_channels()
+        for channel in channels:
+            if channel in existing_channels:
+                Channel.objects.get(game=game, channel_id=channel).delete()
+        data =  {'game':game.name,
+                'channels': channels}
         return Response(data,status=status.HTTP_200_OK)
