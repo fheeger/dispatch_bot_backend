@@ -33,7 +33,7 @@ class Game(models.Model):
 
     def get_channels(self):
         """ return list of channels"""
-        return Channel.objects.filter(game=self).values_list('channel_id', flat=True)
+        return list(Channel.objects.filter(game=self).values_list('channel_id', flat=True))
 
 class Channel(models.Model):
     name = models.CharField(max_length=100)
