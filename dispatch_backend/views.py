@@ -31,7 +31,7 @@ def get_game(request, game_name=None):
         return games.latest('id')
     else:
         for game in games:
-            if int(category_id) in list(game.get_categories()):
+            if category_id and int(category_id) in list(game.get_categories()):
                 return game
         raise GameRetrievalException("Can not decide which game you want", status.HTTP_400_BAD_REQUEST)
 
