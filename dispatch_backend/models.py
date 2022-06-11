@@ -82,4 +82,8 @@ class Category(models.Model):
     def __str__(self):
         return str(self.number)
 
+    def clean(self):
+        """ check that the category is not already in a current game """
+        validators.validate_category(self, ValidationError)
+
 
