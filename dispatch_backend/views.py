@@ -31,18 +31,19 @@ def get_game(request, game_name=None):
         return games.latest('id')
     else:
         for game in games:
-            if int(category_id) in list(game.get_categories()):
+            if category_id and int(category_id) in list(game.get_categories()):
                 return game
         raise GameRetrievalException("Can not decide which game you want", status.HTTP_400_BAD_REQUEST)
 
 class get_round(viewsets.ModelViewSet):
-    """ show list of encryption types"""
     permission_classes = (AllowAny,)
     serializer_class = GameSerializer
 
     def get_object(self):
-        """ return the list of user types as dict """
-        return get_game(self.request)
+        try:
+            return get_game(self.request)
+        except Exception:
+            return None
 
     def partial_update(self, request, pk=None):
         try:
@@ -137,13 +138,13 @@ class end_game(viewsets.ModelViewSet):
         except GameRetrievalException as e:
             return Response(e.message, status=e.status)
         if not game:
-            return Response({'error': 'There is no game to end'},status=status.HTTP_200_OK)
+            return Response({'error': 'There is no game to end'}, status=status.HTTP_404_NOT_FOUND)
         game.has_ended = True
         game.save()
-        data =  {'name':game.name,
+        data = {'name': game.name,
                 'turn': game.turn,
-                'current_time' : game.calculate_time()}
-        return Response(data,status=status.HTTP_200_OK)
+                'current_time': game.calculate_time()}
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class category(viewsets.ModelViewSet):
