@@ -3,7 +3,7 @@ from rest_framework.permissions import  AllowAny
 from .models import Message, Game, Category, Channel
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
 from rest_framework.response import Response
-
+from rest_framework.exceptions import ValidationError
 from .exception import GameRetrievalException
 
 
@@ -51,12 +51,12 @@ class get_round(viewsets.ModelViewSet):
         except GameRetrievalException as e:
             return Response(e.message, status=e.status)
         if not game:
-            return Response({'error': 'There is no game'},status=status.HTTP_200_OK)
+            return Response({'error': 'There is no game'}, status=status.HTTP_404_NOT_FOUND)
         game.turn += 1
         game.save()
-        data =  {'name':game.name,
+        data = {'name': game.name,
                 'turn': game.turn,
-                'current_time' : game.calculate_time()}
+                'current_time': game.calculate_time()}
         for message in Message.objects.filter(approved=False, turn_when_received=game.turn-1):
             message.set_turn(game.turn+1)
         return Response(data, status=status.HTTP_200_OK)
@@ -123,7 +123,7 @@ class check_messages(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            raise ValidationError(detail={"message": e.message, "status": e.status})
         messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
         return messages
 
@@ -205,7 +205,7 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            raise ValidationError(detail={'message': e.message, 'status': e.status})
         channels = Channel.objects.filter(game=game)
         return channels
 
