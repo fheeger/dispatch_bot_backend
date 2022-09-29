@@ -22,7 +22,7 @@ django admin can be accessed here: http://localhost:8000/admin/
 ## to run the discord bot
 
     cd dispatch_bot
-    python discord_script.py
+    python bot_script.py
 
 django needs the following libraries:
 djangorestframework
@@ -30,7 +30,7 @@ requests
 discord
 python-dateutil
 
-## bqsic commands
+## basic commands
 
 to start a new game:
 

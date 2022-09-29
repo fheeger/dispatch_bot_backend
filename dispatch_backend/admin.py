@@ -1,11 +1,30 @@
 from django.contrib import admin
 from .models import Message, Game, Channel, SentMessage, Category
+from django.db.models import F
+from django import forms
 
+class MessageForm(forms.ModelForm):
+
+    class Meta:
+        model = Message
+        exclude = ()
+
+    def __init__(self, *args, **kwargs):
+        """ put relevant channels"""
+        instance = kwargs.get('instance', None)
+        super(MessageForm, self).__init__(*args, **kwargs)
+        if instance:
+            self.fields['channel'].choices = [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
+            self.fields['channel'].initial = instance.channel
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channel', 'turn_when_received', 'is_lost', 'approved']
     list_filter = ['approved', 'game__name', 'sender', 'is_lost']
     list_editable = ['channel', 'turn_when_received', 'is_lost', 'approved']
+    form = MessageForm
+
+    def get_changelist_form(self, request, **kwargs):
+        return MessageForm
 
     def truncated_text(self, obj):
         """ show only the beginning of the text"""
@@ -18,26 +37,13 @@ class MessageAdmin(admin.ModelAdmin):
         return True
 
     def get_queryset(self, request):
-        game = Game.objects.latest('id')
-        return self.model.objects.exclude(approved = True, turn_when_received__lte=game.turn)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        """ only show channels of last game
-        warning : with show it for all messages even from previous game"""
-        if db_field.name == "channel":
-            try:
-                game = Game.objects.latest('id')
-                kwargs["queryset"] = Channel.objects.filter(game=game)
-            except:
-                kwargs["queryset"] = Channel.objects.all()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        return self.model.objects.exclude(approved = True, turn_when_received__lte=F('game__turn'))
 
 
 class SentMessageAdmin(MessageAdmin):
     list_editable=[]
     def get_queryset(self, request):
-        game = Game.objects.latest('id')
-        return self.model.objects.filter(approved = True, turn_when_received__lte=game.turn)
+        return self.model.objects.filter(approved = True, turn_when_received__lte=F('game__turn'))
 
 class CategoryInline(admin.StackedInline):
     model = Category
