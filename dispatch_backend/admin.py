@@ -13,7 +13,7 @@ class MessageForm(forms.ModelForm):
         """ put relevant channels"""
         instance = kwargs.get('instance', None)
         super(MessageForm, self).__init__(*args, **kwargs)
-        if instance:
+        if instance and "channel" in self.fields:
             self.fields['channel'].choices = [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
             self.fields['channel'].initial = instance.channel
 
