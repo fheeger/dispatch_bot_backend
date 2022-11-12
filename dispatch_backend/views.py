@@ -3,7 +3,7 @@ from rest_framework.permissions import  AllowAny
 from .models import Message, Game, Category, Channel
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from .exception import GameRetrievalException
 
 
@@ -123,7 +123,7 @@ class check_messages(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            raise ValidationError(detail={"message": e.message, "status": e.status})
+            raise ValidationError(detail={"message": e.message}, code=e.status)
         messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
         return messages
 
@@ -158,7 +158,7 @@ class category(viewsets.ModelViewSet):
         try:
             game = get_game(self.request, game_name)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            raise NotFound(detail={"message": e.message}, code=e.status)
         categories = Category.objects.filter(game=game)
         return categories
 
@@ -205,7 +205,7 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            raise ValidationError(detail={'message': e.message, 'status': e.status})
+            raise ValidationError(detail={"message": e.message}, code=e.status)
         channels = Channel.objects.filter(game=game)
         return channels
 
