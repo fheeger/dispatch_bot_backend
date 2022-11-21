@@ -3,10 +3,13 @@ from datetime import datetime, time, timedelta, date
 from django.core.exceptions import ValidationError
 import dispatch_backend.validators as validators
 from django.core.validators import RegexValidator
+from django.contrib.auth import get_user_model
 
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z-_]*$', 'Only alphanumeric characters or underscore or dash are allowed.')
 
 START_TIME=time(8, 00, 00)
+
+User = get_user_model()
 
 class Game(models.Model):
     name = models.CharField(max_length=100, validators=[alphanumeric])
@@ -85,5 +88,16 @@ class Category(models.Model):
     def clean(self):
         """ check that the category is not already in a current game """
         validators.validate_category(self, ValidationError)
+
+class UserGameRelation(models.Model):
+
+    user =  models.ForeignKey(User, on_delete=models.CASCADE)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = "users"
+
+    def __str__(self):
+        return str(self.game.name) + ' : '+ str(self.user.username)
 
 

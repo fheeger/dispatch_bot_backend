@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Message, Game, Channel, SentMessage, Category
+from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation
 from django.db.models import F
 from django import forms
 
@@ -37,13 +37,24 @@ class MessageAdmin(admin.ModelAdmin):
         return True
 
     def get_queryset(self, request):
-        return self.model.objects.exclude(approved = True, turn_when_received__lte=F('game__turn'))
+        queryset = self.model.objects.exclude(approved = True, turn_when_received__lte=F('game__turn'))
+        list_games_id = UserGameRelation.objects.filter(user=request.user).values_list('game', flat=True)
+        queryset = queryset.filter(game__in=list_games_id)
+        return queryset
 
 
 class SentMessageAdmin(MessageAdmin):
     list_editable=[]
+
     def get_queryset(self, request):
-        return self.model.objects.filter(approved = True, turn_when_received__lte=F('game__turn'))
+        queryset = self.model.objects.filter(approved = True, turn_when_received__lte=F('game__turn'))
+        list_games_id = UserGameRelation.objects.filter(user=request.user).values_list('game', flat=True)
+        queryset = queryset.filter(game__in=list_games_id)
+        return queryset
+
+class UserGameRelationInline(admin.StackedInline):
+    model = UserGameRelation
+    extra = 0
 
 class CategoryInline(admin.StackedInline):
     model = Category
@@ -53,7 +64,7 @@ class CategoryInline(admin.StackedInline):
 class GameAdmin(admin.ModelAdmin):
     list_display = ['name', 'turn', 'has_ended']
     list_filter = ['name', 'has_ended']
-    inlines = [CategoryInline]
+    inlines = [CategoryInline, UserGameRelationInline]
     readonly_fields = ['server_id', 'user_id']
 
 class ChannelAdmin(admin.ModelAdmin):
