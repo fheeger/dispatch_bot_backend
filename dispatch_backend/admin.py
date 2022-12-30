@@ -70,6 +70,13 @@ class GameAdmin(admin.ModelAdmin):
     inlines = [CategoryInline, UserGameRelationInline]
     readonly_fields = ['server_id', 'user_id']
 
+    def get_queryset(self, request):
+        if request.user.is_superuser:
+            return self.model.objects.all()
+        list_games_id = UserGameRelation.objects.filter(user=request.user).values_list('game', flat=True)
+        queryset = self.model.objects.filter(id__in=list_games_id)
+        return queryset
+
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['name', 'game', 'channel_id']
     list_filter = ['name', 'game']

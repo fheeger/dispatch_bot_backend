@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
 from .models import Message, Game, Category, Channel
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer, UserSerializer, \
-    ProfileSerializer
+    ProfileSerializer, UserGameRelationSerializer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from .exception import GameRetrievalException
@@ -71,6 +71,8 @@ class new_game(viewsets.ModelViewSet):
 
     def create_game(self, request, *args, **kwargs):
         """ create a new game and new channels """
+        if len(Profile.objects.filter(discord_id=request.data['user_id'])) == 0:
+            return Response({'error': "You don't have an account"}, status=status.HTTP_403_FORBIDDEN)
         if len(Game.objects.filter(has_ended=False, name=request.data['name_game'])) >= 1:
             return Response({'error': 'A game with the same name is already going on! Please choose another name'}, status=status.HTTP_406_NOT_ACCEPTABLE)
         serializer = GameSerializer(data={'name':request.data['name_game'],
@@ -78,6 +80,10 @@ class new_game(viewsets.ModelViewSet):
                                           'user_id' : request.data['user_id']}, context={'request': request})
         serializer.is_valid(raise_exception=True)
         game = serializer.save()
+        user_game = UserGameRelationSerializer(data={'user':Profile.objects.get(discord_id=request.data['user_id']).user.id,
+                                                     'game': game.id}, context={'request': request})
+        user_game.is_valid(raise_exception=True)
+        user_game.save()
         for channel in request.data['channels']:
             channel_serializer=ChannelSerializer(data={'name':channel['name'], 'channel_id': channel['id'], 'game':game.id}, context={'request': request})
             channel_serializer.is_valid(raise_exception=True)
