@@ -3,13 +3,15 @@ from datetime import datetime, time, timedelta, date
 from django.core.exceptions import ValidationError
 import dispatch_backend.validators as validators
 from django.core.validators import RegexValidator
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z-_]*$', 'Only alphanumeric characters or underscore or dash are allowed.')
 
 START_TIME=time(8, 00, 00)
 
-User = get_user_model()
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    discord_id = models.CharField(max_length=65)
 
 class Game(models.Model):
     name = models.CharField(max_length=100, validators=[alphanumeric])
@@ -99,5 +101,3 @@ class UserGameRelation(models.Model):
 
     def __str__(self):
         return str(self.game.name) + ' : '+ str(self.user.username)
-
-

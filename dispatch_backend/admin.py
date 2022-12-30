@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation
+from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
 from django.db.models import F
 from django import forms
+from django.contrib.auth.models import Group, User
 
 class MessageForm(forms.ModelForm):
 
@@ -71,8 +72,20 @@ class ChannelAdmin(admin.ModelAdmin):
     list_display = ['name', 'game', 'channel_id']
     list_filter = ['name', 'game']
 
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    extra = 0
+    readonly_fields = ['discord_id']
+
+class MyUserAdmin(admin.ModelAdmin):
+    list_display = ['email', 'is_superuser']
+    inlines = [ProfileInline,]
+
 
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SentMessage, SentMessageAdmin)
 admin.site.register(Game, GameAdmin)
 admin.site.register(Channel, ChannelAdmin)
+admin.site.unregister(Group)
+admin.site.unregister(User)
+admin.site.register(User, MyUserAdmin)
