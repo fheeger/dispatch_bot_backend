@@ -1,7 +1,9 @@
 from rest_framework import serializers, exceptions
-from .models import Game, Channel, Message, Category
+from .models import Game, Channel, Message, Category, Profile
 from django.core.exceptions import ValidationError
 from .validators import validate_category
+from django.contrib.auth.models import User
+
 class GameSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -33,3 +35,15 @@ class CategorySerializer(serializers.ModelSerializer):
         instance = Category(**data)
         validate_category(instance, serializers.ValidationError)
         return data
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ("username")
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Profile
+        fields = ("username")

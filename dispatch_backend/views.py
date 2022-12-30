@@ -1,11 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
 from .models import Message, Game, Category, Channel
-from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer
+from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer, UserSerializer, \
+    ProfileSerializer
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from .exception import GameRetrievalException
-
+from django.contrib.auth.models import User
 
 def get_game(request, game_name=None):
     server_id = None
@@ -253,3 +254,22 @@ class channel(viewsets.ModelViewSet):
         data = {'game': game.name,
                 'channels': channels}
         return Response(data,status=status.HTTP_200_OK)
+
+class new_user(viewsets.ModelViewSet):
+    """ create user"""
+    permission_classes = (AllowAny,)
+    serializer_class = UserSerializer
+
+    def create_user(self, request, *args, **kwargs):
+        """ create a new user """
+        if len(User.objects.filter(username=request.data['username'])) >= 1:
+            return Response({'error': 'An user with the username {} already exists'.format(request.data['username'])}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        serializer = UserSerializer(data={'username':request.data['username'],
+                                          'is_staff': True}, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        profile_serializer=ProfileSerializer(data={'discord_id':request.data['discord_user_id_hash'],
+                                                   'user_id': user.id}, context={'request': request})
+        profile_serializer.is_valid(raise_exception=True)
+        profile_serializer.save()
+        return Response(serializer.data, status=201)

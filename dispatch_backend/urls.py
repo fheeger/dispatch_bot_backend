@@ -21,5 +21,6 @@ urlpatterns = [
     path('get_categories/<str:game_name>/', views.category.as_view({'get': 'list'})),
     path('update_channels/', views.channel.as_view({'patch': 'update_channels'})),
     path('remove_channels/', views.channel.as_view({'patch': 'remove_channels'})),
-    path('get_channels/', views.channel.as_view({'get': 'list'}))
+    path('get_channels/', views.channel.as_view({'get': 'list'})),
+    path('new_user/', views.new_user.as_view({'post': 'create_user'})),
 ]
