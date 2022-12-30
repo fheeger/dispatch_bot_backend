@@ -4,6 +4,7 @@ from django.db.models import F
 from django import forms
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
 
 class MessageForm(forms.ModelForm):
 
@@ -81,6 +82,25 @@ class ProfileInline(admin.StackedInline):
 class MyUserAdmin(UserAdmin):
     list_display = ['username', 'is_superuser']
     inlines = [ProfileInline,]
+
+    def get_fieldsets(self, request, obj=None):
+        if request.user and request.user.is_superuser:
+            fieldsets =  UserAdmin.fieldsets
+            self.inlines = [ProfileInline,]
+        else:
+            fieldsets = (
+                (None, {'fields': ('username', 'password')}),
+            )
+            self.inlines = []
+        return fieldsets
+
+
+    def get_queryset(self, request):
+        if request.user.is_superuser:
+            queryset = self.model.objects.all()
+        else:
+            queryset = self.model.objects.filter(id=request.user.id)
+        return queryset
 
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SentMessage, SentMessageAdmin)

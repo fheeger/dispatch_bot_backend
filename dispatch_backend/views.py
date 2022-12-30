@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound
 from .exception import GameRetrievalException
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission
 
 def get_game(request, game_name=None):
     server_id = None
@@ -271,6 +272,11 @@ class new_user(viewsets.ModelViewSet):
         password = User.objects.make_random_password(length=10,
                                                      allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
         user.set_password(password)
+        for perm in Permission.objects.all():
+            if 'user' in perm.name and ('Can view' in perm.name or 'Can change' in perm.name):
+                user.user_permissions.add(perm)
+            elif 'message' in perm.name or 'game' in perm.name:
+                user.user_permissions.add(perm)
         user = serializer.save()
         profile_serializer=ProfileSerializer(data={'discord_id':request.data['discord_user_id_hash'],
                                                    'user': user.id}, context={'request': request})
