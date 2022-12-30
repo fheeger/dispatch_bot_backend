@@ -78,7 +78,7 @@ class ProfileInline(admin.StackedInline):
     readonly_fields = ['discord_id']
 
 class MyUserAdmin(admin.ModelAdmin):
-    list_display = ['email', 'is_superuser']
+    list_display = ['username', 'is_superuser']
     inlines = [ProfileInline,]
 
 

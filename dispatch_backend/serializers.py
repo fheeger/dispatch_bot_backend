@@ -40,10 +40,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("username")
+        fields = ("username", "is_staff")
 
 class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("username")
+        fields = ("user", "discord_id")

@@ -267,13 +267,13 @@ class new_user(viewsets.ModelViewSet):
         serializer = UserSerializer(data={'username':request.data['username'],
                                           'is_staff': True}, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        user = serializer.save(commit=False)
+        user = serializer.save()
         password = User.objects.make_random_password(length=10,
                                                      allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
         user.set_password(password)
         user = serializer.save()
         profile_serializer=ProfileSerializer(data={'discord_id':request.data['discord_user_id_hash'],
-                                                   'user_id': user.id}, context={'request': request})
+                                                   'user': user.id}, context={'request': request})
         profile_serializer.is_valid(raise_exception=True)
         profile_serializer.save()
         return Response({**serializer.data, **{'password':password}}, status=201)
