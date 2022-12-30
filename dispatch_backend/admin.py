@@ -3,6 +3,7 @@ from .models import Message, Game, Channel, SentMessage, Category, UserGameRelat
 from django.db.models import F
 from django import forms
 from django.contrib.auth.models import Group, User
+from django.contrib.auth.admin import UserAdmin
 
 class MessageForm(forms.ModelForm):
 
@@ -77,10 +78,9 @@ class ProfileInline(admin.StackedInline):
     extra = 0
     readonly_fields = ['discord_id']
 
-class MyUserAdmin(admin.ModelAdmin):
+class MyUserAdmin(UserAdmin):
     list_display = ['username', 'is_superuser']
     inlines = [ProfileInline,]
-
 
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SentMessage, SentMessageAdmin)
