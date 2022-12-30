@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
-from .models import Message, Game, Category, Channel
+from .models import Message, Game, Category, Channel, Profile
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer, UserSerializer, \
     ProfileSerializer, UserGameRelationSerializer
 from rest_framework.response import Response
@@ -71,7 +71,7 @@ class new_game(viewsets.ModelViewSet):
 
     def create_game(self, request, *args, **kwargs):
         """ create a new game and new channels """
-        if len(Profile.objects.filter(discord_id=request.data['user_id'])) == 0:
+        if len(Profile.objects.filter(discord_id=request.data['discord_user_id_hash'])) == 0:
             return Response({'error': "You don't have an account"}, status=status.HTTP_403_FORBIDDEN)
         if len(Game.objects.filter(has_ended=False, name=request.data['name_game'])) >= 1:
             return Response({'error': 'A game with the same name is already going on! Please choose another name'}, status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -80,7 +80,7 @@ class new_game(viewsets.ModelViewSet):
                                           'user_id' : request.data['user_id']}, context={'request': request})
         serializer.is_valid(raise_exception=True)
         game = serializer.save()
-        user_game = UserGameRelationSerializer(data={'user':Profile.objects.get(discord_id=request.data['user_id']).user.id,
+        user_game = UserGameRelationSerializer(data={'user':Profile.objects.get(discord_id=request.data['discord_user_id_hash']).user.id,
                                                      'game': game.id}, context={'request': request})
         user_game.is_valid(raise_exception=True)
         user_game.save()
@@ -270,8 +270,10 @@ class new_user(viewsets.ModelViewSet):
     def create_user(self, request, *args, **kwargs):
         """ create a new user """
         if len(User.objects.filter(username=request.data['username'])) >= 1:
-            return Response({'error': 'An user with the username {} already exists'.format(request.data['username'])}, status=status.HTTP_406_NOT_ACCEPTABLE)
-        serializer = UserSerializer(data={'username':request.data['username'],
+            return Response('An user with the username {} already exists'.format(request.data['username']), status=status.HTTP_406_NOT_ACCEPTABLE)
+        if len(Profile.objects.filter(discord_id=request.data['discord_user_id_hash'])) >= 1:
+            return Response('An user already exists for your discord user ID', status=status.HTTP_406_NOT_ACCEPTABLE)
+        serializer = UserSerializer(data={'username': request.data['username'],
                                           'is_staff': True}, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
