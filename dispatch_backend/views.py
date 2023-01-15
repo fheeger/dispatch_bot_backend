@@ -1,6 +1,6 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import  AllowAny
-from .models import Message, Game, Category, Channel
+from .models import Message, Game, Category, Channel, Profile
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer, UserSerializer, \
     ProfileSerializer, UserGameRelationSerializer
 from rest_framework.response import Response
@@ -65,7 +65,7 @@ class get_round(viewsets.ModelViewSet):
 
 
 class new_game(viewsets.ModelViewSet):
-    """ show list of encryption types"""
+    """ create a new game"""
     permission_classes = (AllowAny,)
     serializer_class = GameSerializer
 
@@ -136,7 +136,6 @@ class check_messages(viewsets.ModelViewSet):
         return messages
 
 class end_game(viewsets.ModelViewSet):
-    """ show list of encryption types"""
     permission_classes = (AllowAny,)
     serializer_class = GameSerializer
 
@@ -156,7 +155,7 @@ class end_game(viewsets.ModelViewSet):
 
 
 class category(viewsets.ModelViewSet):
-    """ get list of messages"""
+    """ get list of categories"""
     permission_classes = (AllowAny,)
     serializer_class = CategorySerializer
 
@@ -204,7 +203,7 @@ class category(viewsets.ModelViewSet):
         return Response(data,status=status.HTTP_200_OK)
 
 class channel(viewsets.ModelViewSet):
-    """ get list of messages"""
+    """ get list of channels"""
     permission_classes = (AllowAny,)
     serializer_class = ChannelSerializer
 
