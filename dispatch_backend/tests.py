@@ -3,6 +3,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 import json
+from .exception import GameRetrievalException
 
 class MyTest(TestCase):
     def setUp(self):
@@ -30,10 +31,18 @@ class MyTest(TestCase):
                                             game=self.game,
                                             channel=self.channel
                                             )
-        self.sent_message=Message.objects.create(text='test message sent',
+        self.approved_message=Message.objects.create(text='test message approved',
                                             sender='General McArthur',
                                             turn_when_sent=1,
                                             turn_when_received=2,
+                                            game=self.game,
+                                            channel=self.channel,
+                                            approved=True
+                                            )
+        self.sent_message=Message.objects.create(text='test message sent',
+                                            sender='General McArthur',
+                                            turn_when_sent=1,
+                                            turn_when_received=1,
                                             game=self.game,
                                             channel=self.channel,
                                             approved=True
@@ -111,31 +120,55 @@ class MyTest(TestCase):
         url = '/bot/new_game/'
         ###testing for a game that exist
         self.client.force_authenticate(self.user)
-        data = {"user_id": self.profile.discord_id,
+        data = {"discord_user_id_hash": self.profile.discord_id,
                 "name_game": "New_game",
                 "server_id": 32,
-                "channels": [{"name":"new channel","id":2}]
+                "channels": [{"name":"new channel","id":2}],
+                "user_id": 11
                 }
         request = self.client.post(url, data=json.dumps(data), content_type='application/json')
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, {'turn': 1, 'name': 'New_game', 'start_time': '08:00:00', 'server_id': 32, 'user_id': 666})
+        self.assertEqual(request_data, {'turn': 1, 'name': 'New_game', 'start_time': '08:00:00', 'server_id': 32, 'user_id': 11})
 
         ##testing game already exists
-        data = {"user_id": self.profile.discord_id,
+        data = {"discord_user_id_hash": self.profile.discord_id,
                 "name_game": self.game.name,
                 "server_id": 32,
-                "channels": [{"name":"new channel","id":2}]
+                "channels": [{"name":"new channel","id":2}],
+                "user_id": 11
                 }
         request = self.client.post(url, data=data)
         request_data = json.loads(request.content)
         self.assertEqual(request_data, {'error': 'A game with the same name is already going on! Please choose another name'})
 
         ##testing no account for user
-        data = {"user_id": "999",
+        data = {"discord_user_id_hash": "999",
                 "name_game": "New_game",
                 "server_id": 32,
-                "channels": [{"name":"new channel","id":2}]
+                "channels": [{"name":"new channel","id":2}],
+                "user_id": 11
                 }
         request = self.client.post(url, data=data)
         request_data = json.loads(request.content)
         self.assertEqual(request_data, {'error': "You don't have an account"})
+
+
+    def test_get_messages(self):
+        url = '/bot/get_messages/'
+        ###testing for a game that exist
+        self.client.force_authenticate(self.user)
+        data={'server_id':self.game.server_id,
+              'category_id':self.category
+              }
+        request = self.client.get(url, data=data)
+        request_data = request.json()
+        self.assertEqual(len(request_data),1)
+        self.assertEqual(request_data[0]['text'],self.approved_message.text)
+
+
+        ##testing a not existing game
+        data = {'server_id': 0,
+                'category_id': self.category
+                }
+        with self.assertRaises(GameRetrievalException):
+            self.client.get(url, data=data)
