@@ -10,9 +10,12 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
 
 def get_game(request, game_name=None):
-    server_id = getattr(request, request.method).get('server_id', None)
-    category_id = getattr(request, request.method).get('category_id', None)
-    if server_id:
+    body=request.data   ## test case with json.dumps
+    if len(body)==0:
+        body=getattr(request, request.method)   ##normal case
+    server_id = body.get('server_id', None)
+    category_id = body.get('category_id', None)
+    if server_id is not None:
         games = Game.objects.filter(has_ended=False, server_id=server_id)
     else:
         games = Game.objects.filter(has_ended=False)
@@ -171,7 +174,7 @@ class category(viewsets.ModelViewSet):
             if category not in existing_categories:
                 category_serializer = CategorySerializer(data={'number': category,
                                                                'game': game.id}, context={'request': request})
-                print(category_serializer.is_valid(raise_exception=True))
+                category_serializer.is_valid(raise_exception=True)
                 category_serializer.save()
         data =  {'game':game.name,
                 'categories': categories}
@@ -226,7 +229,7 @@ class channel(viewsets.ModelViewSet):
                         'request': request
                     }
                 )
-                print(channel_serializer.is_valid(raise_exception=True))
+                channel_serializer.is_valid(raise_exception=True)
                 channel_serializer.save()
             else:
                 channel_to_update = Channel.objects.get(channel_id=cId)
