@@ -10,17 +10,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
 
 def get_game(request, game_name=None):
-    server_id = None
-    category_id = None
-    if request.POST:
-        server_id = request.POST.get('server_id', None)
-        category_id = request.POST.get('category_id', None)
-    elif request.GET:
-        server_id = request.GET.get('server_id', None)
-        category_id = request.GET.get('category_id', None)
-    elif request.PATCH:
-        server_id = request.PATCH.get('server_id', None)
-        category_id = request.PATCH.get('category_id', None)
+    server_id = getattr(request, request.method).get('server_id', None)
+    category_id = getattr(request, request.method).get('category_id', None)
     if server_id:
         games = Game.objects.filter(has_ended=False, server_id=server_id)
     else:

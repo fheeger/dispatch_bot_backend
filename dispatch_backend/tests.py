@@ -8,7 +8,7 @@ from .exception import GameRetrievalException
 class MyTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.game=Game.objects.create(name="Great game",
+        self.game=Game.objects.create(name="great_game",
                                 server_id=1241432,
                                 user_id=333,
                                 turn=2
@@ -66,7 +66,7 @@ class MyTest(TestCase):
               }
         request = self.client.get(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data,{'turn': 2, 'name': 'Great game', 'start_time': '08:00:00', 'server_id': 1241432, 'user_id': 333})
+        self.assertEqual(request_data,{'turn': 2, 'name': 'great_game', 'start_time': '08:00:00', 'server_id': 1241432, 'user_id': 333})
 
         ##testing a not existing game
         data = {'server_id': 0,
@@ -85,7 +85,7 @@ class MyTest(TestCase):
               }
         request = self.client.patch(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'current_time': '08:30:00', 'name': 'Great game', 'turn': 3})
+        self.assertEqual(request_data, {'current_time': '08:30:00', 'name': 'great_game', 'turn': 3})
 
         ##testing a not existing game
         data = {'server_id': 0,
@@ -105,7 +105,7 @@ class MyTest(TestCase):
                 }
         request = self.client.patch(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'current_time': '08:15:00', 'name': 'Great game', 'turn': 2})
+        self.assertEqual(request_data, {'current_time': '08:15:00', 'name': 'great_game', 'turn': 2})
         self.assertEqual(Game.objects.get(id=self.game.id).has_ended, True)
 
         ##testing a not existing game
@@ -172,3 +172,66 @@ class MyTest(TestCase):
                 }
         with self.assertRaises(GameRetrievalException):
             self.client.get(url, data=data)
+
+
+    def test_send_message(self):
+        url = '/bot/send_message/'
+        ###testing for a game that exist
+        self.client.force_authenticate(self.user)
+        data = {'server_id': self.game.server_id,
+                'category_id': self.category,
+                'text': "Please help me",
+                'sender':'Captain Haddock'
+                }
+        request = self.client.post(url, data=data)
+        request_data = request.json()
+        self.assertEqual(request_data, {'sender': 'Captain Haddock', 'text': 'Please help me',
+                                        'turn_when_sent': 2, 'turn_when_received': 3, 'game': 1})
+
+        ##testing a not existing game
+        data = {'server_id': 0,
+                'category_id': self.category,
+                'text': "Please help me",
+                'sender': 'Captain Haddock'
+                }
+        request = self.client.post(url, data=data)
+        request_data = request.json()
+        self.assertEqual(request_data, 'No game found')
+
+    def test_check_messages(self):
+        url = '/bot/check_messages/'
+        ###testing for a game that exist
+        self.client.force_authenticate(self.user)
+        data={'server_id':self.game.server_id,
+              'category_id':self.category
+              }
+        request = self.client.get(url, data=data)
+        request_data = request.json()
+        self.assertEqual(request_data,[{'sender': 'General McArthur', 'channelName': 'test channel', 'text': 'test message', 'turn_when_sent': 2, 'turn_when_received': 3, 'game': 1}])
+
+        ##testing a not existing game
+        data = {'server_id': 0,
+                'category_id': self.category
+                }
+        request = self.client.get(url, data=data)
+        request_data = request.json()
+        self.assertEqual(request_data, {'message': 'No game found'})
+
+    def test_add_category(self):
+        url = '/bot/add_category/'
+        ###testing for a game that exist
+        self.client.force_authenticate(self.user)
+        data = {"server_id": self.game.server_id,
+                "category": ["111", "222"],
+                }
+        request = self.client.post(url+self.game.name+"/", data=json.dumps(data), content_type='application/json')
+        request_data = json.loads(request.content)
+        self.assertEqual(request_data, {'game': 'great_game', 'categories': ['111', '222']})
+
+        ##testing a not existing game
+        data = {"server_id": 0,
+                "category": ["112", "223"]
+                }
+        request = self.client.post(url+"no_game/", data=json.dumps(data), content_type='application/json')
+        request_data = json.loads(request.content)
+        self.assertEqual(request_data, 'No game found')

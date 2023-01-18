@@ -15,6 +15,5 @@ def validate_game(game, errorModel):
 
 def validate_category(category, errorModel):
     categories = type(category).objects.filter(number=category.number, game__has_ended=False).exclude(id=category.id)
-    print(categories)
     if len(categories)>0:
         raise errorModel("This category is already used in a current game, please choose another one!")
