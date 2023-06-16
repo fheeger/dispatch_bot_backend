@@ -246,11 +246,12 @@ class channel(viewsets.ModelViewSet):
             return Response({'error': 'There is no game'}, status=status.HTTP_200_OK)
         existing_channels = game.get_channels()
         for channel in channels:
-            if channel in existing_channels:
-                Channel.objects.get(game=game, channel_id=channel).delete()
+            channel_id = int(channel)
+            if channel_id in existing_channels:
+                Channel.objects.get(game=game, channel_id=channel_id).delete()
         data = {'game': game.name,
                 'channels': channels}
-        return Response(data,status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
 
 class new_user(viewsets.ModelViewSet):
     """ create user"""
