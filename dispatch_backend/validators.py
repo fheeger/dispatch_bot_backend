@@ -1,5 +1,5 @@
 def validate_message(message, errorModel):
-    if message.channel is None and message.turn_when_received is not None:
+    if message.channel is None and message.approved:
         raise errorModel("You have to choose a channel!")
 
     if not message.is_lost and message.turn_when_received is None and message.approved:
