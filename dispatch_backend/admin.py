@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
 from django.db.models import F
 from django import forms
@@ -44,6 +44,16 @@ class MessageAdmin(admin.ModelAdmin):
         list_games_id = UserGameRelation.objects.filter(user=request.user).values_list('game', flat=True)
         queryset = queryset.filter(game__in=list_games_id)
         return queryset
+
+    def save_model(self, request, obj, form, change):
+        """
+        Given a model instance save it to the database.
+        """
+        obj_before_changes=self.model.objects.get(id=obj.id)
+        if obj_before_changes.approved and '/change/' not in request.path:
+            messages.warning(request, "message {} is already approved and cannot be modified".format(obj.sender))
+        else:
+            super().save_model(request,obj, form, change)
 
 
 class SentMessageAdmin(MessageAdmin):
