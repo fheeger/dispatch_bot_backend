@@ -10,13 +10,14 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
 
 def get_game(request, game_name=None):
-    server_id = request.query_params.get('server_id', None)
-    category_id = request.query_params.get('category_id', None)
-    if server_id:
+    params= request.query_params if len(request.query_params)>0 else request.POST if len(request.POST)>0 else request.data
+    server_id = params.get('server_id', None)
+    category_id = params.get('category_id', None)
+    if server_id is not None:
         games = Game.objects.filter(has_ended=False, server_id=server_id)
     else:
         games = Game.objects.filter(has_ended=False)
-    if game_name:
+    if game_name is not None:
         games = games.filter(name=game_name)
     if len(games) == 0:
         raise GameRetrievalException("No game found", status.HTTP_404_NOT_FOUND)
