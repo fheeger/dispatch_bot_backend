@@ -1,6 +1,4 @@
 from django.contrib import admin, messages
-from django.contrib.admin.views.main import ChangeList
-from django.forms import IntegerField
 
 from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
 from django.db.models import F
