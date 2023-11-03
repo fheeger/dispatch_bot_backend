@@ -1,10 +1,12 @@
 from django.contrib import admin, messages
+from django.contrib.admin.views.main import ChangeList
+from django.forms import IntegerField
+
 from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
 from django.db.models import F
 from django import forms
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.admin import UserAdmin
-from django.utils.translation import gettext_lazy as _
 
 class MessageForm(forms.ModelForm):
 
@@ -17,13 +19,16 @@ class MessageForm(forms.ModelForm):
         instance = kwargs.get('instance', None)
         super(MessageForm, self).__init__(*args, **kwargs)
         if instance and "channel" in self.fields:
-            self.fields['channel'].choices = [('','------')]+[(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
+            self.fields['channel'].choices = [('', '------')]\
+                             + [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
             self.fields['channel'].initial = instance.channel
 
+        self.fields['version'].widget = forms.HiddenInput()
+
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channel', 'turn_when_received', 'is_lost', 'approved']
+    list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'version', 'channel', 'turn_when_received', 'is_lost', 'approved']
     list_filter = ['approved', 'game__name', 'sender', 'is_lost']
-    list_editable = ['channel', 'turn_when_received', 'is_lost', 'approved']
+    list_editable = ['channel', 'turn_when_received', 'is_lost', 'approved', 'version']
     form = MessageForm
 
     def get_changelist_form(self, request, **kwargs):
@@ -49,11 +54,17 @@ class MessageAdmin(admin.ModelAdmin):
         """
         Given a model instance save it to the database.
         """
-        obj_before_changes=self.model.objects.get(id=obj.id)
-        if obj_before_changes.approved and '/change/' not in request.path:
-            messages.warning(request, "message {} is already approved and cannot be modified".format(obj.sender))
+        user_version = form.cleaned_data["version"]
+        db_version = self.model.objects.get(id=obj.id).version
+
+        if db_version != user_version:
+            messages.warning(
+                request,
+                "Message from {} has been changed since you loaded it and could not be modified.".format(obj.sender)
+            )
         else:
-            super().save_model(request,obj, form, change)
+            obj.version += 1
+            super().save_model(request, obj, form, change)
 
 
 class SentMessageAdmin(MessageAdmin):

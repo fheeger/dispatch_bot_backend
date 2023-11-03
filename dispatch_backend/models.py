@@ -58,6 +58,7 @@ class Message(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     approved = models.BooleanField(default=False)
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE, null=True, blank=True)
+    version = models.PositiveIntegerField(default=1)
 
     def __str__(self):
         return self.sender
