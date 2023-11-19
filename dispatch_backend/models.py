@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 import dispatch_backend.validators as validators
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z-_]*$', 'Only alphanumeric characters or underscore or dash are allowed.')
 
@@ -21,6 +22,8 @@ class Game(models.Model):
     has_ended = models.BooleanField(default=False)
     server_id = models.BigIntegerField(blank=True, null=True)
     user_id = models.BigIntegerField(blank=True, null=True)
+    show_sender_in_message = models.BooleanField(default=True)
+    message_maximum_length = models.IntegerField(default=2000, validators=[MinValueValidator(0), MaxValueValidator(2000)])
 
     def __str__(self):
         return self.name
@@ -49,7 +52,7 @@ class Channel(models.Model):
         return self.name
 
 class Message(models.Model):
-    text = models.TextField(max_length=2000)
+    text = models.TextField(max_length=2000)  # 2000 is the maximum length in discord
     date = models.DateTimeField(default=datetime.now)
     sender = models.CharField(max_length=100)
     turn_when_sent = models.IntegerField()

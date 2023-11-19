@@ -21,10 +21,11 @@ class ChannelSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     channelName = serializers.ReadOnlyField(source="channel.name")
     channelId = serializers.ReadOnlyField(source="channel.channel_id")
+    showSender = serializers.ReadOnlyField(source="game.show_sender_in_message")
 
     class Meta:
         model = Message
-        fields = ("sender", "channelName", "channelId", "text", "turn_when_sent", "turn_when_received", "game")
+        fields = ("sender", "showSender", "channelName", "channelId", "text", "turn_when_sent", "turn_when_received", "game")
 
 class CategorySerializer(serializers.ModelSerializer):
 

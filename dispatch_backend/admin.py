@@ -21,7 +21,8 @@ class MessageForm(forms.ModelForm):
                              + [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
             self.fields['channel'].initial = instance.channel
 
-        self.fields['version'].widget = forms.HiddenInput()
+        if instance and "version" in self.fields:
+            self.fields["version"].widget = forms.HiddenInput()
 
 class MessageAdmin(admin.ModelAdmin):
     list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'version', 'channel', 'turn_when_received', 'is_lost', 'approved']

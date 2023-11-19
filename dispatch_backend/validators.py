@@ -5,7 +5,7 @@ def validate_message(message, errorModel):
     if not message.is_lost and message.turn_when_received is None and message.approved:
         raise errorModel("You cannot approve that! Either put it as lost or add a turn when it is received")
 
-    if message.turn_when_received and message.turn_when_received<=message.game.turn:
+    if message.turn_when_received and message.turn_when_received<=message.game.turn and message.approved:
         raise errorModel("You cannot send a message to the past or for this turn, you can only send for next turn or after!")
 
 def validate_game(game, errorModel):

@@ -105,6 +105,13 @@ class new_message(viewsets.ModelViewSet):
         except GameRetrievalException as e:
             return Response(e.message, status=e.status)
         data = request.data.copy()
+        if len(data["text"]) > game.message_maximum_length:
+            return Response(
+                "Your message was too long. "
+                + "The maximum length for messages in this game is {}. ".format(game.message_maximum_length)
+                + "The length of your message was {}.".format(len(data["text"])),
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY
+            )
         data["turn_when_sent"] = game.turn
         data["turn_when_received"] = game.turn+1
         data["game"] = game.id
