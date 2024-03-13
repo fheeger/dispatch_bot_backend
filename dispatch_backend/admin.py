@@ -1,5 +1,6 @@
 from django.contrib import admin, messages
 
+import dispatch_backend
 from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
 from django.db.models import F
 from django import forms
@@ -54,7 +55,10 @@ class MessageAdmin(admin.ModelAdmin):
         Given a model instance save it to the database.
         """
         user_version = form.cleaned_data["version"]
-        db_version = self.model.objects.get(id=obj.id).version
+        try:
+            db_version = self.model.objects.get(id=obj.id).version
+        except dispatch_backend.models.Message.DoesNotExist:
+            db_version = user_version
 
         if db_version != user_version:
             messages.warning(
