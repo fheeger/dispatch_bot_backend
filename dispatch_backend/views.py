@@ -100,7 +100,7 @@ class get_messages(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return ErrorResponse.from_exception(e)
+            raise ValidationError(detail={"message": e.message, "error_type": e.error_type}, code=e.status)
         if not game:
             return []
         messages = Message.objects.filter(game=game, approved=True, turn_when_received=game.turn, is_lost=False)
@@ -177,7 +177,7 @@ class category(viewsets.ModelViewSet):
         try:
             game = get_game(self.request, game_name)
         except GameRetrievalException as e:
-            return ErrorResponse.from_exception(e)
+            raise ValidationError(detail={"message": e.message, "error_type": e.error_type}, code=e.status)
         categories = Category.objects.filter(game=game)
         return categories
 
@@ -226,7 +226,7 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return ErrorResponse.from_exception(e)
+            raise ValidationError(detail={"message": e.message, "error_type": e.error_type}, code=e.status)
         channels = Channel.objects.filter(game=game)
         return channels
 

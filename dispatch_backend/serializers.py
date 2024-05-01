@@ -1,6 +1,5 @@
-from rest_framework import serializers, exceptions
+from rest_framework import serializers
 from .models import Game, Channel, Message, Category, Profile, UserGameRelation
-from django.core.exceptions import ValidationError
 from .validators import validate_category
 from django.contrib.auth.models import User
 
@@ -19,13 +18,15 @@ class ChannelSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    channelName = serializers.ReadOnlyField(source="channel.name")
-    channelId = serializers.ReadOnlyField(source="channel.channel_id")
     showSender = serializers.ReadOnlyField(source="game.show_sender_in_message")
+    channels_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
-        fields = ("sender", "showSender", "channelName", "channelId", "text", "turn_when_sent", "turn_when_received", "game")
+        fields = ("sender", "showSender", "channels_list", "text", "turn_when_sent", "turn_when_received", "game")
+
+    def get_channels_list(self, obj):
+        return [{'channelId':channel.channel_id, 'channelName':channel.name} for channel in obj.channels.all()]
 
 class CategorySerializer(serializers.ModelSerializer):
 

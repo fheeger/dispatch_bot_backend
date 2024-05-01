@@ -28,33 +28,34 @@ class MyTest(TestCase):
                                             sender='General McArthur',
                                             turn_when_sent=2,
                                             turn_when_received=3,
-                                            game=self.game,
-                                            channel=self.channel
+                                            game=self.game
                                             )
+        self.message.channels.add(self.channel)
         self.approved_message=Message.objects.create(text='test message approved',
                                             sender='General McArthur',
                                             turn_when_sent=1,
                                             turn_when_received=2,
                                             game=self.game,
-                                            channel=self.channel,
                                             approved=True
                                             )
+        self.approved_message.channels.add(self.channel)
         self.sent_message=Message.objects.create(text='test message sent',
                                             sender='General McArthur',
                                             turn_when_sent=1,
                                             turn_when_received=1,
                                             game=self.game,
-                                            channel=self.channel,
                                             approved=True
                                             )
+        self.sent_message.channels.add(self.channel)
         self.lost_message=Message.objects.create(text='test message',
                                             sender='General McArthur',
                                             turn_when_sent=1,
                                             turn_when_received=2,
                                             game=self.game,
-                                            channel=self.channel,
                                             is_lost=True
                                             )
+        self.lost_message.channels.add(self.channel)
+
 
 
     def test_get_round(self):
@@ -93,7 +94,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
 
     def test_end_game(self):
@@ -114,7 +115,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_new_game(self):
         url = '/bot/new_game/'
@@ -139,7 +140,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, {'error': 'A game with the same name is already going on! Please choose another name'})
+        self.assertEqual(request_data, {'error_type': 'Game Already Exists', 'message': 'A game with the same name is already going on! Please choose another name'})
 
         ##testing no account for user
         data = {"discord_user_id_hash": "999",
@@ -150,7 +151,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, {'error': "You don't have an account"})
+        self.assertEqual(request_data,  {'error_type': 'No Account', 'message': "You don't have an account"})
 
 
     def test_get_messages(self):
@@ -170,8 +171,8 @@ class MyTest(TestCase):
         data = {'server_id': 0,
                 'category_id': self.category
                 }
-        with self.assertRaises(GameRetrievalException):
-            self.client.get(url, data=data)
+        res = self.client.get(url, data=data)
+        self.assertEqual(res.json(), {'message': 'No game found', 'error_type': 'Game Not Found'})
 
 
     def test_send_message(self):
@@ -185,8 +186,8 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'sender': 'Captain Haddock', 'text': 'Please help me',
-                                        'turn_when_sent': 2, 'turn_when_received': 3, 'game': 1})
+        self.assertEqual(request_data, {'sender': 'Captain Haddock', 'text': 'Please help me',  'channels_list': [],
+                                        'turn_when_sent': 2, 'turn_when_received': 3, 'game': 1, 'showSender': True,})
 
         ##testing a not existing game
         data = {'server_id': 0,
@@ -196,7 +197,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data,  {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_check_messages(self):
         url = '/bot/check_messages/'
@@ -207,14 +208,15 @@ class MyTest(TestCase):
               }
         request = self.client.get(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data,[{'sender': 'General McArthur', 'channelName': 'test channel', 'channelId': 1, 'text': 'test message', 'turn_when_sent': 2, 'turn_when_received': 3, 'game': 1}])
+        self.assertEqual(request_data,[{'sender': 'General McArthur', 'showSender': True, 'text': 'test message',
+                                        'turn_when_sent': 2, 'turn_when_received': 3, 'game':1,  'channels_list': [{'channelId': 1, 'channelName': 'test channel'}],}])
         ##testing a not existing game
         data = {'server_id': 0,
                 'category_id': self.category
                 }
         request = self.client.get(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'message': 'No game found'})
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_add_category(self):
         url = '/bot/add_category/'
@@ -233,7 +235,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url+"no_game/", data=json.dumps(data), content_type='application/json')
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_remove_category(self):
         url = '/bot/remove_category/'
@@ -252,7 +254,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url+"no_game/", data=json.dumps(data), content_type='application/json')
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_get_categories(self):
         url = '/bot/get_categories/'
@@ -266,7 +268,7 @@ class MyTest(TestCase):
         ##testing a not existing game
         request = self.client.get(url+"no_game/", data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'message': 'No game found'})
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_update_channels(self):
         url = '/bot/update_channels/'
@@ -287,7 +289,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=json.dumps(data), content_type='application/json')
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_remove_channels(self):
         url = '/bot/remove_channels/'
@@ -308,7 +310,7 @@ class MyTest(TestCase):
                 }
         request = self.client.post(url, data=json.dumps(data), content_type='application/json')
         request_data = json.loads(request.content)
-        self.assertEqual(request_data, 'No game found')
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_get_channels(self):
         url = '/bot/get_channels/'
@@ -327,7 +329,7 @@ class MyTest(TestCase):
               }
         request = self.client.get(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, {'message': 'No game found'})
+        self.assertEqual(request_data, {'error_type': 'Game Not Found', 'message': 'No game found'})
 
     def test_new_user(self):
         url = '/bot/new_user/'
@@ -345,4 +347,4 @@ class MyTest(TestCase):
                 "discord_user_id_hash": "6af6bde8b32"}
         request = self.client.post(url, data=data)
         request_data = request.json()
-        self.assertEqual(request_data, 'An user with the username admin already exists')
+        self.assertEqual(request_data, {'error_type': 'User Already Exists', 'message':'An user with the username admin already exists'})
