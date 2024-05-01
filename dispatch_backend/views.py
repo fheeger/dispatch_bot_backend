@@ -1,13 +1,18 @@
 from rest_framework import viewsets, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import  AllowAny
+
+from dispatch_backend.error_handling.ErrorResponse import ErrorResponse
 from .models import Message, Game, Category, Channel, Profile
 from .serializers import GameSerializer, ChannelSerializer, MessageSerializer, CategorySerializer, UserSerializer, \
     ProfileSerializer, UserGameRelationSerializer
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
 from .exception import GameRetrievalException
 from django.contrib.auth.models import User
 from django.contrib.auth.models import Permission
+
+from .error_handling import error_type
+
 
 def get_game(request, game_name=None):
     params= request.query_params if len(request.query_params)>0 else request.POST if len(request.POST)>0 else request.data
@@ -20,14 +25,16 @@ def get_game(request, game_name=None):
     if game_name is not None:
         games = games.filter(name=game_name)
     if len(games) == 0:
-        raise GameRetrievalException("No game found", status.HTTP_404_NOT_FOUND)
+        raise GameRetrievalException("No game found", status.HTTP_404_NOT_FOUND, error_type.GAME_NOT_FOUND)
     elif len(games) == 1:
         return games.latest('id')
     else:
         for game in games:
             if category_id and int(category_id) in list(game.get_categories()):
                 return game
-        raise GameRetrievalException("Can not decide which game you want", status.HTTP_400_BAD_REQUEST)
+        raise GameRetrievalException(
+            "Can not decide which game you want", status.HTTP_400_BAD_REQUEST, error_type.GAME_AMBIGUOUS
+        )
 
 class get_round(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
@@ -43,9 +50,9 @@ class get_round(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         if not game:
-            return Response({'error': 'There is no game'}, status=status.HTTP_404_NOT_FOUND)
+            return ErrorResponse(http_status=status.HTTP_404_NOT_FOUND, message="There is no game")
         game.turn += 1
         game.save()
         data = {'name': game.name,
@@ -64,9 +71,10 @@ class new_game(viewsets.ModelViewSet):
     def create_game(self, request, *args, **kwargs):
         """ create a new game and new channels """
         if len(Profile.objects.filter(discord_id=request.data['discord_user_id_hash'])) == 0:
-            return Response({'error': "You don't have an account"}, status=status.HTTP_403_FORBIDDEN)
+            return ErrorResponse(status.HTTP_403_FORBIDDEN, error_type.NO_ACCOUNT, "You don't have an account")
         if len(Game.objects.filter(has_ended=False, name=request.data['name_game'])) >= 1:
-            return Response({'error': 'A game with the same name is already going on! Please choose another name'}, status=status.HTTP_406_NOT_ACCEPTABLE)
+            return ErrorResponse(status.HTTP_422_UNPROCESSABLE_ENTITY, error_type.GAME_ALREADY_EXISTS,
+                                 'A game with the same name is already going on! Please choose another name')
         serializer = GameSerializer(data={'name':request.data['name_game'],
                                           'server_id': request.data['server_id'],
                                           'user_id' : request.data['user_id']}, context={'request': request})
@@ -89,7 +97,10 @@ class get_messages(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """ list of messages """
-        game = get_game(self.request)
+        try:
+            game = get_game(self.request)
+        except GameRetrievalException as e:
+            return ErrorResponse.from_exception(e)
         if not game:
             return []
         messages = Message.objects.filter(game=game, approved=True, turn_when_received=game.turn, is_lost=False)
@@ -103,14 +114,14 @@ class new_message(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         data = request.data.copy()
         if len(data["text"]) > game.message_maximum_length:
-            return Response(
+            return ErrorResponse(
+                status.HTTP_422_UNPROCESSABLE_ENTITY, error_type.MESSAGE_TOO_LONG,
                 "Your message was too long. "
                 + "The maximum length for messages in this game is {}. ".format(game.message_maximum_length)
-                + "The length of your message was {}.".format(len(data["text"])),
-                status=status.HTTP_422_UNPROCESSABLE_ENTITY
+                + "The length of your message was {}.".format(len(data["text"]))
             )
         data["turn_when_sent"] = game.turn
         data["turn_when_received"] = game.turn+1
@@ -119,6 +130,7 @@ class new_message(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=201)
+
 
 class check_messages(viewsets.ModelViewSet):
     """ get list of messages"""
@@ -130,9 +142,10 @@ class check_messages(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            raise ValidationError(detail={"message": e.message}, code=e.status)
+            raise ValidationError(detail={"message": e.message, "error_type": e.error_type}, code=e.status)
         messages = Message.objects.filter(game=game, approved=False, turn_when_received=game.turn+1)
         return messages
+
 
 class end_game(viewsets.ModelViewSet):
     permission_classes = (AllowAny,)
@@ -142,9 +155,9 @@ class end_game(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         if not game:
-            return Response({'error': 'There is no game to end'}, status=status.HTTP_404_NOT_FOUND)
+            return ErrorResponse(status.HTTP_404_NOT_FOUND, error_type.GAME_NOT_FOUND, 'There is no game to end')
         game.has_ended = True
         game.save()
         data = {'name': game.name,
@@ -164,7 +177,7 @@ class category(viewsets.ModelViewSet):
         try:
             game = get_game(self.request, game_name)
         except GameRetrievalException as e:
-            raise NotFound(detail={"message": e.message}, code=e.status)
+            return ErrorResponse.from_exception(e)
         categories = Category.objects.filter(game=game)
         return categories
 
@@ -173,7 +186,7 @@ class category(viewsets.ModelViewSet):
         try:
             game = get_game(self.request, game_name)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         existing_categories = game.get_categories()
         for category in categories:
             if category not in existing_categories:
@@ -181,25 +194,27 @@ class category(viewsets.ModelViewSet):
                                                                'game': game.id}, context={'request': request})
                 category_serializer.is_valid(raise_exception=True)
                 category_serializer.save()
-        data =  {'game':game.name,
-                'categories': categories}
-        return Response(data,status=status.HTTP_200_OK)
+        data = {'game': game.name, 'categories': categories}
+        return Response(data, status=status.HTTP_200_OK)
 
     def remove_category(self, request, game_name):
         categories = request.data['category']
         try:
             game = get_game(self.request, game_name)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         if not game:
-            return Response({'error': 'There is no game with this name : {}'.format(game_name)},status=status.HTTP_200_OK)
+            return ErrorResponse(
+                status.HTTP_404_NOT_FOUND, error_type.GAME_NOT_FOUND,
+                'There is no game with this name : {}'.format(game_name)
+            )
         existing_categories = game.get_categories()
         for category in categories:
             if category in existing_categories:
                 Category.objects.get(game=game, number=category).delete()
-        data =  {'game':game.name,
-                'category': categories}
-        return Response(data,status=status.HTTP_200_OK)
+        data = {'game': game.name, 'category': categories}
+        return Response(data, status=status.HTTP_200_OK)
+
 
 class channel(viewsets.ModelViewSet):
     """ get list of channels"""
@@ -211,7 +226,7 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            raise ValidationError(detail={"message": e.message}, code=e.status)
+            return ErrorResponse.from_exception(e)
         channels = Channel.objects.filter(game=game)
         return channels
 
@@ -220,7 +235,7 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         existing_channels = game.get_channels()
         for cId, cName in channels.items():
             if int(cId) not in existing_channels:
@@ -249,9 +264,9 @@ class channel(viewsets.ModelViewSet):
         try:
             game = get_game(self.request)
         except GameRetrievalException as e:
-            return Response(e.message, status=e.status)
+            return ErrorResponse.from_exception(e)
         if not game:
-            return Response({'error': 'There is no game'}, status=status.HTTP_200_OK)
+            return ErrorResponse(http_status=status.HTTP_404_NOT_FOUND, message='There is no game')
         existing_channels = game.get_channels()
         for channel in channels:
             channel_id = int(channel)
@@ -269,9 +284,15 @@ class new_user(viewsets.ModelViewSet):
     def create_user(self, request, *args, **kwargs):
         """ create a new user """
         if len(User.objects.filter(username=request.data['username'])) >= 1:
-            return Response('An user with the username {} already exists'.format(request.data['username']), status=status.HTTP_406_NOT_ACCEPTABLE)
+            return ErrorResponse(
+                status.HTTP_400_BAD_REQUEST, error_type.USER_ALREADY_EXISTS,
+                'An user with the username {} already exists'.format(request.data['username'])
+            )
         if len(Profile.objects.filter(discord_id=request.data['discord_user_id_hash'])) >= 1:
-            return Response('An user already exists for your discord user ID', status=status.HTTP_406_NOT_ACCEPTABLE)
+            return ErrorResponse(
+                status.HTTP_400_BAD_REQUEST, error_type.USER_ALREADY_EXISTS,
+                'An user already exists for your discord user ID'
+            )
         serializer = UserSerializer(data={'username': request.data['username'],
                                           'is_staff': True}, context={'request': request})
         serializer.is_valid(raise_exception=True)
