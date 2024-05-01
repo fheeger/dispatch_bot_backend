@@ -60,7 +60,7 @@ class Message(models.Model):
     is_lost = models.BooleanField(default=False)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     approved = models.BooleanField(default=False)
-    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, null=True, blank=True)
+    channels = models.ManyToManyField(Channel, related_name='message_channel')
     version = models.PositiveIntegerField(default=1)
 
     def __str__(self):

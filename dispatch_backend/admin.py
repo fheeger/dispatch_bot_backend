@@ -1,35 +1,29 @@
 from django.contrib import admin, messages
 
 import dispatch_backend
-from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, User, Profile
+from .forms import MessageForm
+from .models import Message, Game, Channel, SentMessage, Category, UserGameRelation, Profile
 from django.db.models import F
-from django import forms
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.admin.views.main import ChangeList
 
-class MessageForm(forms.ModelForm):
+class MessageChangeList(ChangeList):
 
-    class Meta:
-        model = Message
-        exclude = ()
+    def __init__(self,  *args, **kwargs):
 
-    def __init__(self, *args, **kwargs):
-        """ put relevant channels"""
-        instance = kwargs.get('instance', None)
-        super(MessageForm, self).__init__(*args, **kwargs)
-        if instance and "channel" in self.fields:
-            self.fields['channel'].choices = [('', '------')]\
-                             + [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
-            self.fields['channel'].initial = instance.channel
+        super(MessageChangeList, self).__init__(*args, **kwargs)
 
-        if instance and "version" in self.fields:
-            self.fields["version"].widget = forms.HiddenInput()
+        self.list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channels', 'version', 'turn_when_received', 'is_lost', 'approved']
+        self.list_editable = ['turn_when_received', 'is_lost', 'approved', 'version', 'channels']
+        self.list_filter = ['approved', 'game__name', 'sender', 'is_lost']
+        self.list_display_links = ['game']
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'version', 'channel', 'turn_when_received', 'is_lost', 'approved']
-    list_filter = ['approved', 'game__name', 'sender', 'is_lost']
-    list_editable = ['channel', 'turn_when_received', 'is_lost', 'approved', 'version']
     form = MessageForm
+
+    def get_changelist(self, request, **kwargs):
+        return MessageChangeList
 
     def get_changelist_form(self, request, **kwargs):
         return MessageForm
