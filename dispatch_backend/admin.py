@@ -1,4 +1,6 @@
 from django.contrib import admin, messages
+from django.db import models
+from django.forms import SelectMultiple
 
 import dispatch_backend
 from .forms import MessageForm
@@ -11,9 +13,7 @@ from django.contrib.admin.views.main import ChangeList
 class MessageChangeList(ChangeList):
 
     def __init__(self,  *args, **kwargs):
-
         super(MessageChangeList, self).__init__(*args, **kwargs)
-
         self.list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channels', 'version', 'turn_when_received', 'is_lost', 'approved']
         self.list_editable = ['turn_when_received', 'is_lost', 'approved', 'version', 'channels']
         self.list_filter = ['approved', 'game__name', 'sender', 'is_lost']
@@ -61,6 +61,9 @@ class MessageAdmin(admin.ModelAdmin):
             )
         else:
             obj.version += 1
+            obj.turn_when_received = form.cleaned_data["turn_when_received"]
+            obj.is_lost = form.cleaned_data["is_lost"]
+            obj.approved = form.cleaned_data["approved"]
             super().save_model(request, obj, form, change)
 
 

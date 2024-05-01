@@ -23,9 +23,8 @@ class MessageForm(forms.ModelForm):
         if instance:
             if "version" in self.fields:
                 self.fields["version"].widget = forms.HiddenInput()
-
+                self.fields['version'].initial = instance.version
             self.fields['channels'].initial = [c.pk for c in instance.channels.all()]
-            self.fields['version'].initial = instance.version
             self.fields['turn_when_received'].initial = instance.turn_when_received
             self.fields['is_lost'].initial = instance.is_lost
             self.fields['approved'].initial = instance.approved
