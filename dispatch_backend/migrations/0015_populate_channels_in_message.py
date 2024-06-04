@@ -5,7 +5,8 @@ from django.db import migrations, models
 def populate_channels(apps, schema_editor):
     Message = apps.get_model('dispatch_backend', 'Message')
     for message in Message.objects.all():
-        message.channels.add(message.channel)
+        if message.channel is not None:
+            message.channels.add(message.channel)
         message.save()
 
 def populate_channel(apps, schema_editor):
