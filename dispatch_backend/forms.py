@@ -23,7 +23,7 @@ class MessageForm(forms.ModelForm):
             if "version" in self.fields:
                 self.fields["version"].widget = forms.HiddenInput()
                 self.fields['version'].initial = instance.version
-            self.fields['channels'].choices = [(channel.id, channel.name) for channel in Channel.objects.filter(game=instance.game)]
+            self.fields['channels'].queryset = Channel.objects.filter(game=instance.game)
             self.fields['channels'].initial = [c.pk for c in instance.channels.all()]
             self.fields['turn_when_received'].initial = instance.turn_when_received
             self.fields['is_lost'].initial = instance.is_lost
