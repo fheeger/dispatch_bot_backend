@@ -59,6 +59,11 @@ class MessageAdmin(admin.ModelAdmin):
                 request,
                 "Message from {} has been changed since you loaded it and could not be modified.".format(obj.sender)
             )
+        elif form.cleaned_data["approved"] and len(form.cleaned_data["channels"]) == 0:
+            messages.error(
+                request,
+                "Message from {} has can only be approved if at least one channel is chosen.".format(obj.sender)
+            )
         else:
             obj.version += 1
             obj.turn_when_received = form.cleaned_data["turn_when_received"]
