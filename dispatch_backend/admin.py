@@ -16,11 +16,11 @@ class MessageChangeList(ChangeList):
         super(MessageChangeList, self).__init__(*args, **kwargs)
         self.list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channels', 'version', 'turn_when_received', 'is_lost', 'approved']
         self.list_editable = ['turn_when_received', 'is_lost', 'approved', 'version', 'channels']
-        self.list_filter = ['approved', 'game__name', 'sender', 'is_lost']
         self.list_display_links = ['game']
 
 class MessageAdmin(admin.ModelAdmin):
     form = MessageForm
+    list_filter = ['approved', 'game__name', 'sender', 'is_lost']
 
     def get_changelist(self, request, **kwargs):
         return MessageChangeList
