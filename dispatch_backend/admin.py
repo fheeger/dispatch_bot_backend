@@ -14,7 +14,7 @@ class MessageChangeList(ChangeList):
 
     def __init__(self,  *args, **kwargs):
         super(MessageChangeList, self).__init__(*args, **kwargs)
-        self.list_display = ['game', 'turn_when_sent', 'sender', 'truncated_text', 'channels', 'version', 'turn_when_received', 'is_lost', 'approved']
+        self.list_display = ['id', 'game', 'turn_when_sent', 'sender', 'truncated_text', 'channels', 'version', 'turn_when_received', 'is_lost', 'approved']
         self.list_editable = ['turn_when_received', 'is_lost', 'approved', 'version', 'channels']
         self.list_display_links = ['game']
 
@@ -44,6 +44,14 @@ class MessageAdmin(admin.ModelAdmin):
         queryset = queryset.filter(game__in=list_games_id)
         return queryset
 
+    def save_related(self, request, form, formsets, change):
+        print(form.cleaned_data)
+        if not form.cleaned_data["approved"] or len(form.cleaned_data["channels"])>0:
+            super().save_related(request, form, formsets, change)
+        else:
+            messages.error(
+                request, "Message {}: the channels cannot be empty when the message is approved".format(form.instance.id))
+
     def save_model(self, request, obj, form, change):
         """
         Given a model instance save it to the database.
@@ -57,12 +65,12 @@ class MessageAdmin(admin.ModelAdmin):
         if db_version != user_version:
             messages.warning(
                 request,
-                "Message from {} has been changed since you loaded it and could not be modified.".format(obj.sender)
+                "Message {} has been changed since you loaded it and could not be modified.".format(obj.id)
             )
         elif form.cleaned_data["approved"] and len(form.cleaned_data["channels"]) == 0:
             messages.error(
                 request,
-                "Message from {} has can only be approved if at least one channel is chosen.".format(obj.sender)
+                "Message {} has can only be approved if at least one channel is chosen.".format(obj.id)
             )
         else:
             obj.version += 1
